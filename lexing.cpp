@@ -24,10 +24,10 @@ namespace
 		return is_letter(c) || c == '_';
 	}
 
-    bool is_identifier_character(int c)
-    {
-        return is_digit(c) || is_correct_identifier_start(c);
-    }
+	bool is_identifier_character(int c)
+	{
+		return is_digit(c) || is_correct_identifier_start(c);
+	}
 
 	bool is_integral_literal(boost::string_ref str)
 	{
