@@ -107,7 +107,7 @@ void print_lexical_unit(const LexicalUnit& lexicalUnit, std::ostream &os)
 	boost::apply_visitor(Printer{os}, lexicalUnit);
 }
 
-boost::optional<LexicalUnit> Lexer::operator()()
+bool Lexer::advance()
 {
 	const int eof = std::istream::traits_type::eof();
 	int ch;
@@ -121,7 +121,8 @@ boost::optional<LexicalUnit> Lexer::operator()()
 		{
 			state = LexerState::initial;
 			buffer.clear();
-			return LexicalUnit(token);
+			lexicalUnits.push_back(LexicalUnit(token));
+			return true;
 		};
 		if(state == LexerState::integer)
 		{
@@ -165,12 +166,59 @@ boost::optional<LexicalUnit> Lexer::operator()()
 		}
 		buffer.push_back(ch);
 	}
-	return boost::none;
+	return false;
+}
+
+LexerIterator Lexer::begin()
+{
+	return LexerIterator(*this);
+}
+
+LexerIterator Lexer::end()
+{
+	return LexerIterator();
 }
 
 Lexer::Lexer(std::istream& is) :
 	is(is),
 	state(LexerState::initial)
 {
+	advance();
+}
 
+LexerIterator::LexerIterator() :
+	position(0),
+	lexer(nullptr)
+{
+
+}
+
+LexerIterator::LexerIterator(Lexer& lexer) :
+	position(0),
+    lexer(&lexer)
+{
+
+}
+
+void LexerIterator::increment()
+{
+	++position;
+	if(position == lexer->lexicalUnits.size())
+	{
+		if(!lexer->advance())
+		{
+			position = 0;
+			lexer = nullptr;
+		}
+	}
+}
+
+bool LexerIterator::equal(const LexerIterator& other) const
+{
+	return this->lexer == other.lexer && this->position == other.position;
+}
+
+LexicalUnit& LexerIterator::dereference() const
+{
+	return lexer->lexicalUnits[position];
 }

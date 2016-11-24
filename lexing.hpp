@@ -2,6 +2,8 @@
 #include <iosfwd>
 #include <boost/variant.hpp>
 #include <boost/optional.hpp>
+#include <boost/iterator/iterator_facade.hpp>
+#include <vector>
 
 enum class Operator
 {
@@ -55,14 +57,35 @@ using LexicalUnit = boost::variant<
 
 enum class LexerState : unsigned;
 
+class Lexer;
+
+class LexerIterator : public boost::iterator_facade<LexerIterator, LexicalUnit, boost::forward_traversal_tag>
+{
+	friend class boost::iterator_core_access;
+
+	std::size_t position;
+	Lexer* lexer;
+
+	void increment();
+	bool equal(const LexerIterator& other) const;
+	LexicalUnit& dereference() const;
+public:
+	LexerIterator();
+	LexerIterator(Lexer& lexer);
+};
+
 class Lexer
 {
 	std::string buffer;
 	std::istream& is;
 	LexerState state;
+	bool advance();
+	std::vector<LexicalUnit> lexicalUnits;
+	friend class LexerIterator;
 public:
-	boost::optional<LexicalUnit> operator()();
 	Lexer(std::istream& is);
+	LexerIterator begin();
+	LexerIterator end();
 };
 
 void print_lexical_unit(const LexicalUnit& lexicalUnit, std::ostream& os);
